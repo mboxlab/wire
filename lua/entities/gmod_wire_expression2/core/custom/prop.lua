@@ -61,7 +61,7 @@ local ValidSpawn = PropCore.ValidSpawn
 local canHaveInvalidPhysics = {
 	delete=true, parent=true, deparent=true, solid=true,
 	shadow=true, draw=true, use=true, pos=true, ang=true,
-	manipulate=true
+	manipulate=true, noDupe=true
 }
 
 function PropCore.ValidAction(self, entity, cmd, bone)
@@ -772,10 +772,39 @@ e2function void propDeleteAll()
 	self.data.spawnedProps = {}
 end
 
+--------------------------------------------------------------------------------
+local function canMarkDupeable(ent, ply)
+	if not duplicator.IsAllowed(ent:GetClass()) then return false end -- Entity is not dupeable by default.
+	if ent.markedNoDupeBy == ply:SteamID() then return true end -- Player already changed status. Thus can do this again.
+	return ent.DoNotDuplicate ~= true -- If false or nil -> can mark as dupeable.
+end
+
+__e2setcost(1)
+[nodiscard]
+e2function number entity:propIsDupeable()
+	return (this.DoNotDuplicate == true or not duplicator.IsAllowed(this:GetClass())) and 0 or 1
+end
+
+[nodiscard]
+e2function number entity:propCanSetDupeable()
+	local isOk, Val = pcall(ValidAction, self, this, "noDupe")
+	if not isOk then return 0 end
+
+	return canMarkDupeable(this, self.player) and 1 or 0
+end
+
+__e2setcost(2)
+e2function void entity:propNoDupe(number noDupe)
+	if not ValidAction(self, this, "noDupe") then return end
+	noDupe = noDupe ~= 0
+
+	if not canMarkDupeable(this, self.player) then return self:throw("Can't mark this entity as "..(noDupe and "un" or "").."dupeable!", nil) end
+
+	this.markedNoDupeBy = self.player:SteamID()
+	this.DoNotDuplicate = noDupe
+end
 
 __e2setcost(10)
-
---------------------------------------------------------------------------------
 e2function void entity:propManipulate(vector pos, angle rot, number freeze, number gravity, number notsolid)
 	if not ValidAction(self, this, "manipulate") then return end
 	PhysManipulate(this, pos, rot, freeze, gravity, notsolid)
@@ -801,6 +830,18 @@ end
 e2function void entity:propShadow(number shadowEnable)
 	if not ValidAction(self, this, "shadow") then return end
 	this:DrawShadow( shadowEnable ~= 0 )
+end
+
+e2function void entity:propSleep(number sleep)
+	if not ValidAction(self, this, "sleep") then return end
+	local phys = this:GetPhysicsObject()
+	if phys:IsValid() then
+		if sleep ~= 0 then
+			phys:Sleep()
+		else
+			phys:Wake()
+		end
+	end
 end
 
 e2function void entity:propGravity(number gravity)
@@ -1116,8 +1157,16 @@ e2function void entity:ragdollFreeze(isFrozen)
 
 end
 
-__e2setcost(150)
+__e2setcost(5)
+e2function angle entity:ragdollGetAng()
+	if not ValidAction(self, this) then return end
 
+	local phys = this:GetPhysicsObject()
+
+	return phys:IsValid() and phys:GetAngles() or self:throw("Tried to use entity without physics", Angle())
+end
+
+__e2setcost(150)
 e2function void entity:ragdollSetPos(vector pos)
 	if not ValidAction(self, this, "pos") then return end
 
@@ -1131,8 +1180,9 @@ end
 e2function void entity:ragdollSetAng(angle rot)
 	if not ValidAction(self, this, "rot") then return end
 
+	local o = this:GetPhysicsObject():GetAngles()
 	for _, bone in pairs(GetBones(this)) do
-		setAng(bone, bone:AlignAngles(this:GetForward():Angle(), rot))
+		setAng(bone, bone:AlignAngles(o, rot))
 	end
 
 	this:PhysWake()
@@ -1295,19 +1345,19 @@ end
 __e2setcost(10)
 
 e2function void entity:setEyeTarget(vector pos)
-	if not ValidAction(self, this, "eyetarget") then return end
+	if not ValidAction(self, this) then return end
 	this:SetEyeTarget(pos)
 end
 
 e2function void entity:setFlexWeight(number flex, number weight)
-	if not ValidAction(self, this, "flexweight" .. flex) then return end
+	if not ValidAction(self, this) then return end
 	this:SetFlexWeight(flex, weight)
 end
 
 __e2setcost(30)
 
 e2function void entity:setEyeTargetLocal(vector pos)
-	if not ValidAction(self, this, "eyetarget") then return end
+	if not ValidAction(self, this) then return end
 	if not this:IsRagdoll() then
 		local attachment = this:GetAttachment(this:LookupAttachment("eyes"))
 		if attachment then
@@ -1318,7 +1368,7 @@ e2function void entity:setEyeTargetLocal(vector pos)
 end
 
 e2function void entity:setEyeTargetWorld(vector pos)
-	if not ValidAction(self, this, "eyetarget") then return end
+	if not ValidAction(self, this) then return end
 	if this:IsRagdoll() then
 		local attachment = this:GetAttachment(this:LookupAttachment("eyes"))
 		if attachment then
@@ -1333,13 +1383,13 @@ __e2setcost(20)
 e2function void entity:setFlexWeight(string flex, number weight)
 	flex = this:GetFlexIDByName(flex)
 	if flex then
-		if not ValidAction(self, this, "flexweight" .. flex) then return end
+		if not ValidAction(self, this) then return end
 		this:SetFlexWeight(flex, weight)
 	end
 end
 
 e2function void entity:setFlexScale(number scale)
-	if not ValidAction(self, this, "flexscale") then return end
+	if not ValidAction(self, this) then return end
 	this:SetFlexScale(scale)
 end
 

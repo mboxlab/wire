@@ -271,7 +271,7 @@ end
 function Function:ExtCall(args, types, ctx)
 	if self.arg_sig == types then
 		local success,ret = pcall(self.fn,args)
-		if success then 
+		if success then
 			return ret
 		else
 			local _,msg,trace = E2Lib.unpackException(ret)
@@ -291,7 +291,7 @@ function Function:Ret()
 	return self.ret
 end
 
---- If given the correct arguments, returns the inner untyped function you can call.
+--- If given the correct arguments, returns the inner untyped function you can then call with ENT:Execute(f).
 --- Otherwise, throws an error to the given E2 Context.
 ---@param arg_sig string
 ---@param ctx RuntimeContext
@@ -466,12 +466,17 @@ function E2Lib.isFriend(owner, player)
 	return owner == player
 end
 
-function E2Lib.isOwner(self, entity)
-	if game.SinglePlayer() then return true end
-	local owner = E2Lib.getOwner(self, entity)
-	if not IsValid(owner) then return false end
-
-	return E2Lib.isFriend(owner, self.player)
+if game.SinglePlayer() then
+	function E2Lib.isOwner(self, entity)
+		return true
+	end
+else
+	function E2Lib.isOwner(self, entity)
+		local owner = E2Lib.getOwner(self, entity)
+		if not IsValid(owner) then return false end
+	
+		return E2Lib.isFriend(owner, self.player)
+	end
 end
 
 local isOwner = E2Lib.isOwner
@@ -647,6 +652,59 @@ local Keyword = {
 }
 
 E2Lib.Keyword = Keyword
+
+--- A list of every word that we might use in the future
+E2Lib.ReservedWord = {
+	abstract = true,
+	as = true,
+	await = true,
+	async = true,
+	class = true,
+	constructor = true,
+	debugger = true,
+	declare = true,
+	default = true,
+	delete = true,
+	enum = true,
+	export = true,
+	extends = true,
+	["false"] = true,
+	finally = true,
+	from = true,
+	implements = true,
+	import = true,
+	["in"] = true,
+	instanceof = true,
+	interface = true,
+	match = true,
+	macro = true,
+	mod = true,
+	module = true,
+	mut = true,
+	namespace = true,
+	new = true,
+	null = true,
+	of = true,
+	package = true,
+	private = true,
+	protected =true,
+	public = true,
+	require = true,
+	static = true,
+	struct = true,
+	super = true,
+	this = true,
+	throw = true,
+	throws = true,
+	["true"] = true,
+	type = true,
+	typeof = true,
+	undefined = true,
+	union = true,
+	use = true,
+	yield = true,
+	var = true,
+}
 
 ---@type table<string, Keyword>
 E2Lib.KeywordLookup = {}
