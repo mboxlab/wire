@@ -846,6 +846,7 @@ e2function number table:maxIndex()
 	table_perf_check(self, this)
 	local largest = nil
 	local index = 0
+	local cost = 0
 	for k,v in pairs( this.n ) do
 		cost = cost + 1
 		if (this.ntypes[k] == "n") then
@@ -864,6 +865,7 @@ e2function number table:minIndex()
 	table_perf_check(self, this)
 	local smallest = nil
 	local index = 0
+	local cost = 0
 	for k,v in pairs( this.n ) do
 		cost = cost + 1
 		if (this.ntypes[k] == "n") then
