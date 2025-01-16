@@ -870,7 +870,10 @@ e2function void entity:propInertia( vector inertia )
 	if inertia:IsZero() then return end
 	local phys = this:GetPhysicsObject()
 	if IsValid( phys ) then
-		phys:SetInertia(inertia)
+		local x = math.Clamp(inertia[1], 1, 100000)
+		local y = math.Clamp(inertia[2], 1, 100000)
+		local z = math.Clamp(inertia[3], 1, 100000)
+		phys:SetInertia(Vector(x, y, z))
 	end
 end
 
