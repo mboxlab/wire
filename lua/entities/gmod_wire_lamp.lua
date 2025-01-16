@@ -110,42 +110,44 @@ function ENT:TriggerInput(iname, value)
 end
 
 function ENT:Switch( on )
-	if on ~= not self.flashlight then return end
-	self.on = on
+	timer.Create("wire_lamp_switch."..self:EntIndex(), 0.1, 1, function()
+		if on ~= not self.flashlight then return end
+		self.on = on
 
-	if not on then
-		SafeRemoveEntity( self.flashlight )
-		self.flashlight = nil
-		self:SetOn( false )
-		return
-	end
+		if not on then
+			SafeRemoveEntity( self.flashlight )
+			self.flashlight = nil
+			self:SetOn( false )
+			return
+		end
 
-	self:SetOn( true )
+		self:SetOn( true )
 
-	local angForward = self:GetAngles()
+		local angForward = self:GetAngles()
 
-	self.flashlight = ents.Create( "env_projectedtexture" )
+		self.flashlight = ents.Create( "env_projectedtexture" )
 
-		self.flashlight:SetParent( self )
+			self.flashlight:SetParent( self )
 
-		-- The local positions are the offsets from parent..
-		self.flashlight:SetLocalPos( Vector( 0, 0, 0 ) )
-		self.flashlight:SetLocalAngles( Angle(0,0,0) )
+			-- The local positions are the offsets from parent..
+			self.flashlight:SetLocalPos( Vector( 0, 0, 0 ) )
+			self.flashlight:SetLocalAngles( Angle(0,0,0) )
 
-		-- Looks like only one flashlight can have shadows enabled!
-		self.flashlight:SetKeyValue( "enableshadows", 1 )
+			-- Looks like only one flashlight can have shadows enabled!
+			self.flashlight:SetKeyValue( "enableshadows", 1 )
 
-		self.flashlight:SetKeyValue( "farz", self.Dist )
-		self.flashlight:SetKeyValue( "nearz", 12 )
-		self.flashlight:SetKeyValue( "lightfov", self.FOV )
+			self.flashlight:SetKeyValue( "farz", self.Dist )
+			self.flashlight:SetKeyValue( "nearz", 12 )
+			self.flashlight:SetKeyValue( "lightfov", self.FOV )
 
-		local c = self:GetColor()
-		local b = self.Brightness
-		self.flashlight:SetKeyValue( "lightcolor", Format( "%i %i %i 255", c.r * b, c.g * b, c.b * b ) )
+			local c = self:GetColor()
+			local b = self.Brightness
+			self.flashlight:SetKeyValue( "lightcolor", Format( "%i %i %i 255", c.r * b, c.g * b, c.b * b ) )
 
-	self.flashlight:Spawn()
+		self.flashlight:Spawn()
 
-	self.flashlight:Input( "SpotlightTexture", NULL, NULL, self.Texture )
+		self.flashlight:Input( "SpotlightTexture", NULL, NULL, self.Texture )
+	end)
 end
 
 function ENT:UpdateLight()
