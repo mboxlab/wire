@@ -493,6 +493,11 @@ e2function number entity:isUnderWater()
 	if this:WaterLevel() > 0 then return 1 else return 0 end
 end
 
+e2function number entity:isAlive()
+	if not IsValid(this) then return self:throw("Invalid entity!", 0) end
+	return this:Alive() and 1 or 0
+end
+
 e2function number entity:isValid()
 	if IsValid(this) then return 1 else return 0 end
 end
@@ -521,6 +526,16 @@ end
 e2function string entity:getSubMaterial(index)
 	if not IsValid(this) then return self:throw("Invalid entity!", "") end
 	return this:GetSubMaterial(index-1) or ""
+end
+
+e2function number entity:getModelRadius()
+	if not IsValid(this) then return self:throw("Invalid entity!", 0) end
+	return this:GetModelRadius() or 0
+end
+
+e2function number entity:getModelScale()
+	if not IsValid(this) then return self:throw("Invalid entity!", 0) end
+	return this:GetModelScale()
 end
 
 __e2setcost(20)
@@ -575,10 +590,37 @@ e2function number entity:getBodygroup(bgrp_id)
 	if not IsValid(this) then return self:throw("Invalid entity!", 0) end
 	return this:GetBodygroup(bgrp_id)
 end
+
+--- Gets <this>'s bodygroup name.
+e2function string entity:getBodygroupName(bgrp_id)
+    if not IsValid(this) then return self:throw("Invalid entity!", "") end
+    return this:GetBodygroupName(bgrp_id)
+end
+
 --- Gets <this>'s bodygroup count.
 e2function number entity:getBodygroups(bgrp_id)
 	if not IsValid(this) then return self:throw("Invalid entity!", 0) end
 	return this:GetBodygroupCount(bgrp_id)
+end
+
+E2Lib.registerConstant("BLOOD_DONT_BLEED", DONT_BLEED)
+E2Lib.registerConstant("BLOOD_COLOR_RED", BLOOD_COLOR_RED)
+E2Lib.registerConstant("BLOOD_COLOR_YELLOW", BLOOD_COLOR_YELLOW)
+E2Lib.registerConstant("BLOOD_COLOR_GREEN", BLOOD_COLOR_GREEN)
+E2Lib.registerConstant("BLOOD_COLOR_MECH", BLOOD_COLOR_MECH)
+E2Lib.registerConstant("BLOOD_COLOR_ANTLION", BLOOD_COLOR_ANTLION)
+E2Lib.registerConstant("BLOOD_COLOR_ZOMBIE", BLOOD_COLOR_ZOMBIE)
+E2Lib.registerConstant("BLOOD_COLOR_ANTLION_WORKER", BLOOD_COLOR_ANTLION_WORKER)
+
+e2function void entity:setBloodColor(number bloodcolor)
+	if not IsValid(this) then return self:throw("Invalid entity!", nil) end
+	if not isOwner(self, this) then return self:throw("You do not own this entity!", nil) end
+	this:SetBloodColor(math.Clamp(bloodcolor, -1, 6))
+end
+
+e2function number entity:getBloodColor()
+	if not IsValid(this) then return self:throw("Invalid entity!", -1) end
+	return this:GetBloodColor() or -1
 end
 
 --[[******************************************************************************]]
@@ -741,6 +783,14 @@ e2function void entity:podStripWeapons()
 		ply:StripWeapons()
 		ply:ChatPrint("Your weapons have been stripped!")
 	end
+end
+
+e2function void entity:podSetName(string name)
+	if not IsValid(this) or not this:IsVehicle() or not this.VehicleTable or not this.VehicleTable.Name then return self:throw("Invalid vehicle!", nil) end
+	if not isOwner(self, this) then return self:throw("You do not own this entity!", nil) end
+	if hook.Run("Wire_CanName") == false then return self:throw("A hook prevented this function from running") end
+	name = name:sub(1,200)
+	this.VehicleTable.Name = name
 end
 
 --[[******************************************************************************]]

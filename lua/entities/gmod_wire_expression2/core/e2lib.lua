@@ -653,56 +653,6 @@ local Keyword = {
 
 E2Lib.Keyword = Keyword
 
---- A list of every word that we might use in the future
-E2Lib.ReservedWord = {
-	abstract = true,
-	as = true,
-	await = true,
-	async = true,
-	class = true,
-	constructor = true,
-	debugger = true,
-	declare = true,
-	default = true,
-	delete = true,
-	enum = true,
-	export = true,
-	extends = true,
-	["false"] = true,
-	finally = true,
-	from = true,
-	implements = true,
-	import = true,
-	["in"] = true,
-	instanceof = true,
-	interface = true,
-	macro = true,
-	module = true,
-	mut = true,
-	namespace = true,
-	new = true,
-	null = true,
-	of = true,
-	package = true,
-	private = true,
-	protected =true,
-	public = true,
-	require = true,
-	static = true,
-	struct = true,
-	super = true,
-	this = true,
-	throw = true,
-	throws = true,
-	["true"] = true,
-	type = true,
-	typeof = true,
-	undefined = true,
-	union = true,
-	yield = true,
-	var = true,
-}
-
 ---@type table<string, Keyword>
 E2Lib.KeywordLookup = {}
 
@@ -1238,7 +1188,7 @@ end
 ---@return Trace? trace
 function E2Lib.unpackException(struct)
 	if type(struct) == "string" then
-		return false, struct, nil
+		return false, struct, { start_line = -1, start_col = -1 }
 	end
 	return struct.userdata and struct.userdata.catchable or false, struct.message, struct.trace
 end
@@ -1494,7 +1444,11 @@ function E2Lib.compileScript(code, owner)
 		else
 			local _, why, trace = E2Lib.unpackException(why)
 
-			if trace then
+			if why == "exit" then
+				return true
+			elseif why == "perf" then
+				return false,  "tick quota exceeded (at line " .. trace.start_line .. ", char " .. trace.start_col .. ")"
+			elseif trace then
 				return false, "Runtime error: '" .. why .. "' at line " .. trace.start_line .. ", col " .. trace.start_col
 			else
 				return false, why
